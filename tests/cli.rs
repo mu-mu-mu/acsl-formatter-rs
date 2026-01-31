@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -13,38 +13,35 @@ fn temp_path(name: &str) -> PathBuf {
     path
 }
 
-#[test]
-fn formats_acsl_annotations_in_place() {
-    let path = temp_path("basic");
-    let input = "int foo(int a){\n/*@ (a) && (b || c) ; */\nreturn a;\n}\n";
-    fs::write(&path, input).expect("write");
+fn run_fixture(name: &str) {
+    let base = Path::new("tests/fixtures");
+    let input_path = base.join(format!("{name}.c"));
+    let expected_path = base.join(format!("{name}.expected.c"));
+
+    let input = fs::read_to_string(&input_path).expect("read input fixture");
+    let expected = fs::read_to_string(&expected_path).expect("read expected fixture");
+
+    let tmp = temp_path(name);
+    fs::write(&tmp, input).expect("write temp input");
 
     let status = Command::new(env!("CARGO_BIN_EXE_acslfmt"))
-        .arg(&path)
+        .arg(&tmp)
         .status()
         .expect("run acslfmt");
     assert!(status.success());
 
-    let output = fs::read_to_string(&path).expect("read");
-    assert_eq!(output, "int foo(int a){\n/*@ a && (b || c); */\nreturn a;\n}\n");
+    let output = fs::read_to_string(&tmp).expect("read output");
+    assert_eq!(output, expected);
 
-    let _ = fs::remove_file(&path);
+    let _ = fs::remove_file(&tmp);
+}
+
+#[test]
+fn formats_acsl_annotations_in_place() {
+    run_fixture("basic");
 }
 
 #[test]
 fn preserves_non_acsl_content() {
-    let path = temp_path("plain");
-    let input = "int main(){\n// regular comment\nreturn 0;\n}\n";
-    fs::write(&path, input).expect("write");
-
-    let status = Command::new(env!("CARGO_BIN_EXE_acslfmt"))
-        .arg(&path)
-        .status()
-        .expect("run acslfmt");
-    assert!(status.success());
-
-    let output = fs::read_to_string(&path).expect("read");
-    assert_eq!(output, input);
-
-    let _ = fs::remove_file(&path);
+    run_fixture("preserve");
 }
