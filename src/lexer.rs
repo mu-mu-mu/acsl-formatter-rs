@@ -7,10 +7,14 @@ pub enum TokenKind {
     Op(String),
     LParen,
     RParen,
+    LBracket,
+    RBracket,
     Comma,
     Semicolon,
     Question,
     Colon,
+    KwForall,
+    KwExists,
     End,
 }
 
@@ -20,13 +24,13 @@ pub struct Token {
     pub pos: usize,
 }
 
-pub struct Lexer<'a> {
+pub struct Lexer {
     chars: Vec<char>,
     idx: usize,
 }
 
-impl<'a> Lexer<'a> {
-    pub fn new(input: &'a str) -> Self {
+impl Lexer {
+    pub fn new(input: &str) -> Self {
         Self {
             chars: input.chars().collect(),
             idx: 0,
@@ -51,10 +55,12 @@ impl<'a> Lexer<'a> {
                 self.idx += 1;
             }
             let text = self.slice(start, self.idx);
-            return Ok(Token {
-                kind: TokenKind::Ident(text),
-                pos,
-            });
+            let kind = match text.as_str() {
+                "\\forall" => TokenKind::KwForall,
+                "\\exists" => TokenKind::KwExists,
+                _ => TokenKind::Ident(text),
+            };
+            return Ok(Token { kind, pos });
         }
 
         if ch.is_ascii_digit() {
@@ -82,6 +88,20 @@ impl<'a> Lexer<'a> {
                 self.idx += 1;
                 Ok(Token {
                     kind: TokenKind::RParen,
+                    pos,
+                })
+            }
+            '[' => {
+                self.idx += 1;
+                Ok(Token {
+                    kind: TokenKind::LBracket,
+                    pos,
+                })
+            }
+            ']' => {
+                self.idx += 1;
+                Ok(Token {
+                    kind: TokenKind::RBracket,
                     pos,
                 })
             }
@@ -161,9 +181,9 @@ impl<'a> Lexer<'a> {
 }
 
 fn is_ident_start(ch: char) -> bool {
-    ch.is_ascii_alphabetic() || ch == '_'
+    ch.is_ascii_alphabetic() || ch == '_' || ch == '\\'
 }
 
 fn is_ident_continue(ch: char) -> bool {
-    ch.is_ascii_alphanumeric() || ch == '_'
+    ch.is_ascii_alphanumeric() || ch == '_' || ch == '\\'
 }

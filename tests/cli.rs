@@ -47,6 +47,31 @@ fn formats_redundant_parentheses() {
 }
 
 #[test]
+fn formats_ternary_operator() {
+    run_fixture("ternary");
+}
+
+#[test]
+fn formats_calls_and_indexing() {
+    run_fixture("call_index");
+}
+
+#[test]
+fn formats_builtins_and_labels() {
+    run_fixture("builtins");
+}
+
+#[test]
+fn formats_quantifiers() {
+    run_fixture("quantifiers");
+}
+
+#[test]
+fn formats_validity_predicates() {
+    run_fixture("valid");
+}
+
+#[test]
 fn preserves_non_acsl_content() {
     run_fixture("preserve");
 }

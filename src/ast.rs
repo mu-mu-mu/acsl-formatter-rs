@@ -11,6 +11,24 @@ pub enum Expr {
         left: Box<Expr>,
         right: Box<Expr>,
     },
+    Ternary {
+        cond: Box<Expr>,
+        then_expr: Box<Expr>,
+        else_expr: Box<Expr>,
+    },
+    Call {
+        callee: Box<Expr>,
+        args: Vec<Expr>,
+    },
+    Index {
+        base: Box<Expr>,
+        index: Box<Expr>,
+    },
+    Quant {
+        kind: QuantKind,
+        vars: Vec<String>,
+        body: Box<Expr>,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -43,6 +61,12 @@ pub enum BinaryOp {
 pub enum Assoc {
     Left,
     Right,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum QuantKind {
+    Forall,
+    Exists,
 }
 
 impl UnaryOp {
@@ -78,14 +102,14 @@ impl BinaryOp {
 
     pub fn precedence(self) -> u8 {
         match self {
-            BinaryOp::Iff => 1,
-            BinaryOp::Implies => 2,
-            BinaryOp::Or => 3,
-            BinaryOp::And => 4,
-            BinaryOp::Eq | BinaryOp::Ne => 5,
-            BinaryOp::Lt | BinaryOp::Le | BinaryOp::Gt | BinaryOp::Ge => 6,
-            BinaryOp::Add | BinaryOp::Sub => 7,
-            BinaryOp::Mul | BinaryOp::Div | BinaryOp::Mod => 8,
+            BinaryOp::Iff => 2,
+            BinaryOp::Implies => 3,
+            BinaryOp::Or => 4,
+            BinaryOp::And => 5,
+            BinaryOp::Eq | BinaryOp::Ne => 6,
+            BinaryOp::Lt | BinaryOp::Le | BinaryOp::Gt | BinaryOp::Ge => 7,
+            BinaryOp::Add | BinaryOp::Sub => 8,
+            BinaryOp::Mul | BinaryOp::Div | BinaryOp::Mod => 9,
         }
     }
 
@@ -93,6 +117,15 @@ impl BinaryOp {
         match self {
             BinaryOp::Implies => Assoc::Right,
             _ => Assoc::Left,
+        }
+    }
+}
+
+impl QuantKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            QuantKind::Forall => "\\forall",
+            QuantKind::Exists => "\\exists",
         }
     }
 }

@@ -53,22 +53,22 @@ pub fn format_acsl_annotations(input: &str) -> String {
 }
 
 pub fn format_annotation_content(content: &str) -> String {
-    let had_trailing_semicolon = content.trim_end().ends_with(';');
-    let mut parts = Vec::new();
-    for part in content.split(';') {
-        let trimmed = part.trim();
-        if trimmed.is_empty() {
-            continue;
+    let trimmed = content.trim();
+    if trimmed.is_empty() {
+        return String::new();
+    }
+    match Parser::new(trimmed).and_then(|mut p| p.parse_annotation_list()) {
+        Ok((exprs, trailing)) => {
+            let mut joined = exprs
+                .iter()
+                .map(format_expr)
+                .collect::<Vec<_>>()
+                .join("; ");
+            if trailing {
+                joined.push(';');
+            }
+            joined
         }
-        let formatted = match Parser::new(trimmed).and_then(|mut p| p.parse_expression()) {
-            Ok(expr) => format_expr(&expr),
-            Err(_) => trimmed.to_string(),
-        };
-        parts.push(formatted);
+        Err(_) => trimmed.to_string(),
     }
-    let mut joined = parts.join("; ");
-    if had_trailing_semicolon {
-        joined.push(';');
-    }
-    joined
 }
