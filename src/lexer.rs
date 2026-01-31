@@ -21,7 +21,6 @@ pub struct Token {
 }
 
 pub struct Lexer<'a> {
-    input: &'a str,
     chars: Vec<char>,
     idx: usize,
 }
@@ -29,7 +28,6 @@ pub struct Lexer<'a> {
 impl<'a> Lexer<'a> {
     pub fn new(input: &'a str) -> Self {
         Self {
-            input,
             chars: input.chars().collect(),
             idx: 0,
         }
