@@ -52,6 +52,11 @@ fn formats_ternary_operator() {
 }
 
 #[test]
+fn formats_nested_ternary() {
+    run_fixture("nested_ternary");
+}
+
+#[test]
 fn formats_calls_and_indexing() {
     run_fixture("call_index");
 }
@@ -67,8 +72,23 @@ fn formats_quantifiers() {
 }
 
 #[test]
+fn formats_chained_quantifiers() {
+    run_fixture("quant_chain");
+}
+
+#[test]
 fn formats_validity_predicates() {
     run_fixture("valid");
+}
+
+#[test]
+fn formats_labels_and_nested_builtins() {
+    run_fixture("labels");
+}
+
+#[test]
+fn formats_operator_precedence() {
+    run_fixture("precedence");
 }
 
 #[test]
