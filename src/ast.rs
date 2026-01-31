@@ -1,0 +1,98 @@
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Expr {
+    Ident(String),
+    Number(String),
+    Unary {
+        op: UnaryOp,
+        expr: Box<Expr>,
+    },
+    Binary {
+        op: BinaryOp,
+        left: Box<Expr>,
+        right: Box<Expr>,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UnaryOp {
+    Not,
+    Neg,
+    Pos,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BinaryOp {
+    Mul,
+    Div,
+    Mod,
+    Add,
+    Sub,
+    Lt,
+    Le,
+    Gt,
+    Ge,
+    Eq,
+    Ne,
+    And,
+    Or,
+    Implies,
+    Iff,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Assoc {
+    Left,
+    Right,
+}
+
+impl UnaryOp {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            UnaryOp::Not => "!",
+            UnaryOp::Neg => "-",
+            UnaryOp::Pos => "+",
+        }
+    }
+}
+
+impl BinaryOp {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            BinaryOp::Mul => "*",
+            BinaryOp::Div => "/",
+            BinaryOp::Mod => "%",
+            BinaryOp::Add => "+",
+            BinaryOp::Sub => "-",
+            BinaryOp::Lt => "<",
+            BinaryOp::Le => "<=",
+            BinaryOp::Gt => ">",
+            BinaryOp::Ge => ">=",
+            BinaryOp::Eq => "==",
+            BinaryOp::Ne => "!=",
+            BinaryOp::And => "&&",
+            BinaryOp::Or => "||",
+            BinaryOp::Implies => "==>",
+            BinaryOp::Iff => "<==>",
+        }
+    }
+
+    pub fn precedence(self) -> u8 {
+        match self {
+            BinaryOp::Iff => 1,
+            BinaryOp::Implies => 2,
+            BinaryOp::Or => 3,
+            BinaryOp::And => 4,
+            BinaryOp::Eq | BinaryOp::Ne => 5,
+            BinaryOp::Lt | BinaryOp::Le | BinaryOp::Gt | BinaryOp::Ge => 6,
+            BinaryOp::Add | BinaryOp::Sub => 7,
+            BinaryOp::Mul | BinaryOp::Div | BinaryOp::Mod => 8,
+        }
+    }
+
+    pub fn assoc(self) -> Assoc {
+        match self {
+            BinaryOp::Implies => Assoc::Right,
+            _ => Assoc::Left,
+        }
+    }
+}
