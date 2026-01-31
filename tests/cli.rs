@@ -31,72 +31,38 @@ fn run_fixture(name: &str) {
     assert!(status.success());
 
     let output = fs::read_to_string(&tmp).expect("read output");
-    assert_eq!(output, expected);
+    assert_eq!(output, expected, "fixture failed: {name}");
 
     let _ = fs::remove_file(&tmp);
 }
 
 #[test]
-fn formats_acsl_annotations_in_place() {
-    run_fixture("basic");
-}
-
-#[test]
-fn formats_redundant_parentheses() {
-    run_fixture("expr");
-}
-
-#[test]
-fn formats_ternary_operator() {
-    run_fixture("ternary");
-}
-
-#[test]
-fn formats_nested_ternary() {
-    run_fixture("nested_ternary");
-}
-
-#[test]
-fn formats_calls_and_indexing() {
-    run_fixture("call_index");
-}
-
-#[test]
-fn formats_builtins_and_labels() {
-    run_fixture("builtins");
-}
-
-#[test]
-fn formats_quantifiers() {
-    run_fixture("quantifiers");
-}
-
-#[test]
-fn formats_chained_quantifiers() {
-    run_fixture("quant_chain");
-}
-
-#[test]
-fn formats_validity_predicates() {
-    run_fixture("valid");
-}
-
-#[test]
-fn formats_labels_and_nested_builtins() {
-    run_fixture("labels");
-}
-
-#[test]
-fn formats_operator_precedence() {
-    run_fixture("precedence");
-}
-
-#[test]
-fn formats_loop_invariant_and_assert() {
-    run_fixture("loop_assert");
-}
-
-#[test]
-fn preserves_non_acsl_content() {
-    run_fixture("preserve");
+fn formats_all_fixtures() {
+    let base = Path::new("tests/fixtures");
+    let mut names = Vec::new();
+    for entry in fs::read_dir(base).expect("read fixtures dir") {
+        let entry = entry.expect("read dir entry");
+        let path = entry.path();
+        if path.extension().and_then(|ext| ext.to_str()) != Some("c") {
+            continue;
+        }
+        let file_name = match path.file_name().and_then(|n| n.to_str()) {
+            Some(name) => name,
+            None => continue,
+        };
+        if file_name.ends_with(".expected.c") {
+            continue;
+        }
+        let stem = file_name.strip_suffix(".c").expect("stem");
+        let expected = base.join(format!("{stem}.expected.c"));
+        if expected.exists() {
+            names.push(stem.to_string());
+        }
+    }
+    names.sort();
+    assert!(!names.is_empty(), "no fixtures found");
+    for name in names {
+        run_fixture(&name);
+        println!("fixture ok: {name}");
+    }
 }
