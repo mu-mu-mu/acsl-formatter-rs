@@ -8,6 +8,21 @@ use pest_derive::Parser;
 #[grammar = "grammar.pest"]
 struct AcslParser;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ClauseKind {
+    Expr,
+    Assert,
+    LoopInvariant,
+    Requires,
+    Ensures,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Clause {
+    pub kind: ClauseKind,
+    pub expr: Expr,
+}
+
 pub fn parse_expression(input: &str) -> Result<Expr, Error> {
     let mut pairs = AcslParser::parse(Rule::expr_input, input)
         .map_err(|e| Error::Parse(e.to_string()))?;
@@ -21,20 +36,86 @@ pub fn parse_expression(input: &str) -> Result<Expr, Error> {
     parse_expr(expr_pair)
 }
 
-pub fn parse_annotation_list(input: &str) -> Result<(Vec<Expr>, bool), Error> {
+pub fn parse_annotation_list(input: &str) -> Result<(Vec<Clause>, bool), Error> {
     let mut pairs = AcslParser::parse(Rule::expr_list, input)
         .map_err(|e| Error::Parse(e.to_string()))?;
     let pair = pairs
         .next()
         .ok_or_else(|| Error::Parse("missing expr_list".to_string()))?;
-    let mut exprs = Vec::new();
+    let mut clauses = Vec::new();
     for next in pair.into_inner() {
-        if next.as_rule() == Rule::expr {
-            exprs.push(parse_expr(next)?);
+        if next.as_rule() == Rule::clause {
+            clauses.push(parse_clause(next)?);
         }
     }
     let trailing = input.trim_end().ends_with(';');
-    Ok((exprs, trailing))
+    Ok((clauses, trailing))
+}
+
+fn parse_clause(pair: Pair<Rule>) -> Result<Clause, Error> {
+    let mut inner = pair.into_inner();
+    let first = inner
+        .next()
+        .ok_or_else(|| Error::Parse("missing clause".to_string()))?;
+    match first.as_rule() {
+        Rule::loop_invariant => {
+            let mut inner = first.into_inner();
+            let _loop_kw = inner.next();
+            let _inv_kw = inner.next();
+            let expr_pair = inner
+                .next()
+                .ok_or_else(|| Error::Parse("missing loop invariant expr".to_string()))?;
+            let expr = parse_expr(expr_pair)?;
+            Ok(Clause {
+                kind: ClauseKind::LoopInvariant,
+                expr,
+            })
+        }
+        Rule::assert_clause => {
+            let mut inner = first.into_inner();
+            let _assert_kw = inner.next();
+            let expr_pair = inner
+                .next()
+                .ok_or_else(|| Error::Parse("missing assert expr".to_string()))?;
+            let expr = parse_expr(expr_pair)?;
+            Ok(Clause {
+                kind: ClauseKind::Assert,
+                expr,
+            })
+        }
+        Rule::requires_clause => {
+            let mut inner = first.into_inner();
+            let _kw = inner.next();
+            let expr_pair = inner
+                .next()
+                .ok_or_else(|| Error::Parse("missing requires expr".to_string()))?;
+            let expr = parse_expr(expr_pair)?;
+            Ok(Clause {
+                kind: ClauseKind::Requires,
+                expr,
+            })
+        }
+        Rule::ensures_clause => {
+            let mut inner = first.into_inner();
+            let _kw = inner.next();
+            let expr_pair = inner
+                .next()
+                .ok_or_else(|| Error::Parse("missing ensures expr".to_string()))?;
+            let expr = parse_expr(expr_pair)?;
+            Ok(Clause {
+                kind: ClauseKind::Ensures,
+                expr,
+            })
+        }
+        Rule::expr => {
+            let expr = parse_expr(first)?;
+            Ok(Clause {
+                kind: ClauseKind::Expr,
+                expr,
+            })
+        }
+        _ => Err(Error::Parse("unexpected clause".to_string())),
+    }
 }
 
 fn parse_expr(pair: Pair<Rule>) -> Result<Expr, Error> {
@@ -260,7 +341,9 @@ where
     }
     let mut expr = exprs.pop().unwrap();
     while let Some(op_rule) = ops.pop() {
-        let lhs = exprs.pop().ok_or_else(|| Error::Parse("missing lhs".to_string()))?;
+        let lhs = exprs
+            .pop()
+            .ok_or_else(|| Error::Parse("missing lhs".to_string()))?;
         let op = map_bin_op_rule(op_rule)
             .ok_or_else(|| Error::Parse(format!("unknown operator {:?}", op_rule)))?;
         expr = Expr::Binary {

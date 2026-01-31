@@ -1,5 +1,5 @@
 use crate::format::format_expr;
-use crate::parser;
+use crate::parser::{self, ClauseKind};
 
 pub fn format_acsl_annotations(input: &str) -> String {
     let chars: Vec<char> = input.chars().collect();
@@ -15,11 +15,11 @@ pub fn format_acsl_annotations(input: &str) -> String {
                 i += 1;
             }
             if i + 1 < chars.len() {
-                let formatted = format_annotation_content(&content);
+                let formatted = format_annotation_content(&content, FormatStyle::Block);
                 if !formatted.is_empty() {
-                    out.push(' ');
+                    out.push('\n');
                     out.push_str(&formatted);
-                    out.push(' ');
+                    out.push('\n');
                 }
                 out.push_str("*/");
                 i += 2;
@@ -35,7 +35,7 @@ pub fn format_acsl_annotations(input: &str) -> String {
                 content.push(chars[i]);
                 i += 1;
             }
-            let formatted = format_annotation_content(&content);
+            let formatted = format_annotation_content(&content, FormatStyle::Line);
             if !formatted.is_empty() {
                 out.push(' ');
                 out.push_str(&formatted);
@@ -52,22 +52,46 @@ pub fn format_acsl_annotations(input: &str) -> String {
     out
 }
 
-pub fn format_annotation_content(content: &str) -> String {
+pub enum FormatStyle {
+    Block,
+    Line,
+}
+
+pub fn format_annotation_content(content: &str, style: FormatStyle) -> String {
     let trimmed = content.trim();
     if trimmed.is_empty() {
         return String::new();
     }
     match parser::parse_annotation_list(trimmed) {
-        Ok((exprs, trailing)) => {
-            let mut joined = exprs
+        Ok((clauses, trailing)) => {
+            let mut parts = clauses
                 .iter()
-                .map(format_expr)
-                .collect::<Vec<_>>()
-                .join("; ");
-            if trailing {
-                joined.push(';');
+                .map(|clause| match clause.kind {
+                    ClauseKind::Expr => format_expr(&clause.expr),
+                    ClauseKind::Assert => format!("assert {}", format_expr(&clause.expr)),
+                    ClauseKind::LoopInvariant => {
+                        format!("loop invariant {}", format_expr(&clause.expr))
+                    }
+                    ClauseKind::Requires => format!("requires {}", format_expr(&clause.expr)),
+                    ClauseKind::Ensures => format!("ensures {}", format_expr(&clause.expr)),
+                })
+                .collect::<Vec<_>>();
+            if parts.is_empty() {
+                return String::new();
             }
-            joined
+            if trailing {
+                if let Some(last) = parts.last_mut() {
+                    last.push(';');
+                }
+            }
+            match style {
+                FormatStyle::Block => parts
+                    .into_iter()
+                    .map(|p| format!("  {p}"))
+                    .collect::<Vec<_>>()
+                    .join(";\n"),
+                FormatStyle::Line => parts.join("; "),
+            }
         }
         Err(_) => trimmed.to_string(),
     }

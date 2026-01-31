@@ -92,6 +92,11 @@ fn formats_operator_precedence() {
 }
 
 #[test]
+fn formats_loop_invariant_and_assert() {
+    run_fixture("loop_assert");
+}
+
+#[test]
 fn preserves_non_acsl_content() {
     run_fixture("preserve");
 }

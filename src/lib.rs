@@ -11,7 +11,7 @@ pub fn format_acsl_file(input: &str) -> String {
 }
 
 pub fn format_acsl_annotation(content: &str) -> String {
-    annotate::format_annotation_content(content)
+    annotate::format_annotation_content(content, annotate::FormatStyle::Line)
 }
 
 pub fn format_expression(expr: &str) -> Result<String, Error> {

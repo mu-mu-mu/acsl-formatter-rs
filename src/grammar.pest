@@ -1,7 +1,13 @@
 WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
 
 expr_input = { SOI ~ expr ~ EOI }
-expr_list = { SOI ~ (expr ~ (semicolon ~ expr)* ~ semicolon?)? ~ EOI }
+expr_list = { SOI ~ (clause ~ (semicolon ~ clause)* ~ semicolon?)? ~ EOI }
+
+clause = { loop_invariant | assert_clause | requires_clause | ensures_clause | expr }
+loop_invariant = { loop_kw ~ invariant_kw ~ expr }
+assert_clause = { assert_kw ~ expr }
+requires_clause = { requires_kw ~ expr }
+ensures_clause = { ensures_kw ~ expr }
 
 expr = { ternary }
 ternary = { iff_expr ~ (qmark ~ expr ~ colon ~ expr)? }
@@ -32,6 +38,12 @@ index = { lbracket ~ expr ~ rbracket }
 ident_list = { ident ~ (comma ~ ident)* }
 ident = @{ (ASCII_ALPHA | "_" | "\\") ~ (ASCII_ALPHANUMERIC | "_" | "\\")* }
 number = @{ ASCII_DIGIT+ }
+
+loop_kw = { "loop" }
+invariant_kw = { "invariant" }
+assert_kw = { "assert" }
+requires_kw = { "requires" }
+ensures_kw = { "ensures" }
 
 semicolon = _{ ";" }
 comma = _{ "," }
