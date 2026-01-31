@@ -3,11 +3,15 @@ WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
 expr_input = { SOI ~ expr ~ EOI }
 expr_list = { SOI ~ (clause ~ (semicolon ~ clause)* ~ semicolon?)? ~ EOI }
 
-clause = { loop_invariant | assert_clause | requires_clause | ensures_clause | expr }
+clause = { behavior_clause | loop_invariant | assert_clause | requires_clause | ensures_clause | assumes_clause | assigns_clause | expr }
+behavior_clause = { behavior_kw ~ ident ~ colon }
 loop_invariant = { loop_kw ~ invariant_kw ~ expr }
 assert_clause = { assert_kw ~ expr }
 requires_clause = { requires_kw ~ expr }
 ensures_clause = { ensures_kw ~ expr }
+assumes_clause = { assumes_kw ~ expr }
+assigns_clause = { assigns_kw ~ assigns_list }
+assigns_list = { expr ~ (comma ~ expr)* }
 
 expr = { ternary }
 ternary = { iff_expr ~ (qmark ~ expr ~ colon ~ expr)? }
@@ -44,6 +48,9 @@ invariant_kw = { "invariant" }
 assert_kw = { "assert" }
 requires_kw = { "requires" }
 ensures_kw = { "ensures" }
+assumes_kw = { "assumes" }
+assigns_kw = { "assigns" }
+behavior_kw = { "behavior" }
 
 semicolon = _{ ";" }
 comma = _{ "," }

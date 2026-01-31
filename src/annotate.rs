@@ -63,33 +63,45 @@ pub fn format_annotation_content(content: &str, style: FormatStyle) -> String {
         return String::new();
     }
     match parser::parse_annotation_list(trimmed) {
-        Ok((clauses, trailing)) => {
-            let mut parts = clauses
+        Ok((clauses, _trailing)) => {
+            let parts = clauses
                 .iter()
-                .map(|clause| match clause.kind {
-                    ClauseKind::Expr => format_expr(&clause.expr),
-                    ClauseKind::Assert => format!("assert {}", format_expr(&clause.expr)),
-                    ClauseKind::LoopInvariant => {
-                        format!("loop invariant {}", format_expr(&clause.expr))
+                .map(|clause| match clause {
+                    ClauseKind::Expr(expr) => format_expr(expr),
+                    ClauseKind::Assert(expr) => format!("assert {}", format_expr(expr)),
+                    ClauseKind::LoopInvariant(expr) => {
+                        format!("loop invariant {}", format_expr(expr))
                     }
-                    ClauseKind::Requires => format!("requires {}", format_expr(&clause.expr)),
-                    ClauseKind::Ensures => format!("ensures {}", format_expr(&clause.expr)),
+                    ClauseKind::Requires(expr) => format!("requires {}", format_expr(expr)),
+                    ClauseKind::Ensures(expr) => format!("ensures {}", format_expr(expr)),
+                    ClauseKind::Assumes(expr) => format!("assumes {}", format_expr(expr)),
+                    ClauseKind::Assigns(items) => {
+                        let list = items
+                            .iter()
+                            .map(format_expr)
+                            .collect::<Vec<_>>()
+                            .join(", ");
+                        format!("assigns {}", list)
+                    }
+                    ClauseKind::Behavior(name) => format!("behavior {name}:"),
                 })
                 .collect::<Vec<_>>();
             if parts.is_empty() {
                 return String::new();
             }
-            if trailing {
-                if let Some(last) = parts.last_mut() {
-                    last.push(';');
-                }
-            }
             match style {
-                FormatStyle::Block => parts
-                    .into_iter()
-                    .map(|p| format!("  {p}"))
-                    .collect::<Vec<_>>()
-                    .join(";\n"),
+                FormatStyle::Block => {
+                    let mut lines = Vec::new();
+                    for part in parts {
+                        let needs_semicolon = !part.starts_with("behavior ");
+                        if needs_semicolon {
+                            lines.push(format!("  {part};"));
+                        } else {
+                            lines.push(format!("  {part}"));
+                        }
+                    }
+                    lines.join("\n")
+                }
                 FormatStyle::Line => parts.join("; "),
             }
         }

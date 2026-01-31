@@ -8,19 +8,16 @@ use pest_derive::Parser;
 #[grammar = "grammar.pest"]
 struct AcslParser;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ClauseKind {
-    Expr,
-    Assert,
-    LoopInvariant,
-    Requires,
-    Ensures,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Clause {
-    pub kind: ClauseKind,
-    pub expr: Expr,
+pub enum ClauseKind {
+    Expr(Expr),
+    Assert(Expr),
+    LoopInvariant(Expr),
+    Requires(Expr),
+    Ensures(Expr),
+    Assumes(Expr),
+    Assigns(Vec<Expr>),
+    Behavior(String),
 }
 
 pub fn parse_expression(input: &str) -> Result<Expr, Error> {
@@ -36,8 +33,9 @@ pub fn parse_expression(input: &str) -> Result<Expr, Error> {
     parse_expr(expr_pair)
 }
 
-pub fn parse_annotation_list(input: &str) -> Result<(Vec<Clause>, bool), Error> {
-    let mut pairs = AcslParser::parse(Rule::expr_list, input)
+pub fn parse_annotation_list(input: &str) -> Result<(Vec<ClauseKind>, bool), Error> {
+    let normalized = normalize_behavior_headers(input);
+    let mut pairs = AcslParser::parse(Rule::expr_list, &normalized)
         .map_err(|e| Error::Parse(e.to_string()))?;
     let pair = pairs
         .next()
@@ -52,12 +50,41 @@ pub fn parse_annotation_list(input: &str) -> Result<(Vec<Clause>, bool), Error> 
     Ok((clauses, trailing))
 }
 
-fn parse_clause(pair: Pair<Rule>) -> Result<Clause, Error> {
+fn normalize_behavior_headers(input: &str) -> String {
+    let mut out = String::new();
+    let mut first = true;
+    for line in input.split('\n') {
+        if !first {
+            out.push('\n');
+        }
+        first = false;
+        let trimmed = line.trim();
+        if trimmed.starts_with("behavior ") && trimmed.ends_with(':') {
+            out.push_str(trimmed);
+            out.push(';');
+        } else {
+            out.push_str(line);
+        }
+    }
+    out
+}
+
+fn parse_clause(pair: Pair<Rule>) -> Result<ClauseKind, Error> {
     let mut inner = pair.into_inner();
     let first = inner
         .next()
         .ok_or_else(|| Error::Parse("missing clause".to_string()))?;
     match first.as_rule() {
+        Rule::behavior_clause => {
+            let mut inner = first.into_inner();
+            let _kw = inner.next();
+            let name = inner
+                .next()
+                .ok_or_else(|| Error::Parse("missing behavior name".to_string()))?
+                .as_str()
+                .to_string();
+            Ok(ClauseKind::Behavior(name))
+        }
         Rule::loop_invariant => {
             let mut inner = first.into_inner();
             let _loop_kw = inner.next();
@@ -66,10 +93,7 @@ fn parse_clause(pair: Pair<Rule>) -> Result<Clause, Error> {
                 .next()
                 .ok_or_else(|| Error::Parse("missing loop invariant expr".to_string()))?;
             let expr = parse_expr(expr_pair)?;
-            Ok(Clause {
-                kind: ClauseKind::LoopInvariant,
-                expr,
-            })
+            Ok(ClauseKind::LoopInvariant(expr))
         }
         Rule::assert_clause => {
             let mut inner = first.into_inner();
@@ -78,10 +102,7 @@ fn parse_clause(pair: Pair<Rule>) -> Result<Clause, Error> {
                 .next()
                 .ok_or_else(|| Error::Parse("missing assert expr".to_string()))?;
             let expr = parse_expr(expr_pair)?;
-            Ok(Clause {
-                kind: ClauseKind::Assert,
-                expr,
-            })
+            Ok(ClauseKind::Assert(expr))
         }
         Rule::requires_clause => {
             let mut inner = first.into_inner();
@@ -90,10 +111,7 @@ fn parse_clause(pair: Pair<Rule>) -> Result<Clause, Error> {
                 .next()
                 .ok_or_else(|| Error::Parse("missing requires expr".to_string()))?;
             let expr = parse_expr(expr_pair)?;
-            Ok(Clause {
-                kind: ClauseKind::Requires,
-                expr,
-            })
+            Ok(ClauseKind::Requires(expr))
         }
         Rule::ensures_clause => {
             let mut inner = first.into_inner();
@@ -102,17 +120,33 @@ fn parse_clause(pair: Pair<Rule>) -> Result<Clause, Error> {
                 .next()
                 .ok_or_else(|| Error::Parse("missing ensures expr".to_string()))?;
             let expr = parse_expr(expr_pair)?;
-            Ok(Clause {
-                kind: ClauseKind::Ensures,
-                expr,
-            })
+            Ok(ClauseKind::Ensures(expr))
+        }
+        Rule::assumes_clause => {
+            let mut inner = first.into_inner();
+            let _kw = inner.next();
+            let expr_pair = inner
+                .next()
+                .ok_or_else(|| Error::Parse("missing assumes expr".to_string()))?;
+            let expr = parse_expr(expr_pair)?;
+            Ok(ClauseKind::Assumes(expr))
+        }
+        Rule::assigns_clause => {
+            let mut inner = first.into_inner();
+            let _kw = inner.next();
+            let list_pair = inner
+                .next()
+                .ok_or_else(|| Error::Parse("missing assigns list".to_string()))?;
+            let items = list_pair
+                .into_inner()
+                .filter(|p| p.as_rule() == Rule::expr)
+                .map(parse_expr)
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(ClauseKind::Assigns(items))
         }
         Rule::expr => {
             let expr = parse_expr(first)?;
-            Ok(Clause {
-                kind: ClauseKind::Expr,
-                expr,
-            })
+            Ok(ClauseKind::Expr(expr))
         }
         _ => Err(Error::Parse("unexpected clause".to_string())),
     }
