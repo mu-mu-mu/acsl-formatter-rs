@@ -42,6 +42,11 @@ fn formats_acsl_annotations_in_place() {
 }
 
 #[test]
+fn formats_redundant_parentheses() {
+    run_fixture("expr");
+}
+
+#[test]
 fn preserves_non_acsl_content() {
     run_fixture("preserve");
 }
