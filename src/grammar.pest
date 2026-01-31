@@ -1,0 +1,61 @@
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+
+expr_input = { SOI ~ expr ~ EOI }
+expr_list = { SOI ~ (expr ~ (semicolon ~ expr)* ~ semicolon?)? ~ EOI }
+
+expr = { ternary }
+ternary = { iff_expr ~ (qmark ~ expr ~ colon ~ expr)? }
+
+iff_expr = { implies_expr ~ (op_iff ~ implies_expr)* }
+implies_expr = { or_expr ~ (op_implies ~ or_expr)* }
+
+or_expr = { and_expr ~ (op_or ~ and_expr)* }
+and_expr = { eq_expr ~ (op_and ~ eq_expr)* }
+
+eq_expr = { rel_expr ~ ((op_eq | op_ne) ~ rel_expr)* }
+rel_expr = { add_expr ~ ((op_le | op_lt | op_ge | op_gt) ~ add_expr)* }
+add_expr = { mul_expr ~ ((op_add | op_sub) ~ mul_expr)* }
+mul_expr = { unary_expr ~ ((op_mul | op_div | op_mod) ~ unary_expr)* }
+
+unary_expr = { op_unary* ~ postfix_expr }
+postfix_expr = { primary ~ (call | index)* }
+
+primary = { quant | number | ident | lparen ~ expr ~ rparen }
+
+quant = { (forall | exists) ~ ident_list ~ semicolon ~ expr }
+forall = { "\\forall" }
+exists = { "\\exists" }
+
+call = { lparen ~ (expr ~ (comma ~ expr)*)? ~ rparen }
+index = { lbracket ~ expr ~ rbracket }
+
+ident_list = { ident ~ (comma ~ ident)* }
+ident = @{ (ASCII_ALPHA | "_" | "\\") ~ (ASCII_ALPHANUMERIC | "_" | "\\")* }
+number = @{ ASCII_DIGIT+ }
+
+semicolon = _{ ";" }
+comma = _{ "," }
+qmark = _{ "?" }
+colon = _{ ":" }
+
+op_unary = { "!" | "+" | "-" }
+op_iff = { "<==>" }
+op_implies = { "==>" }
+op_or = { "||" }
+op_and = { "&&" }
+op_eq = { "==" }
+op_ne = { "!=" }
+op_le = { "<=" }
+op_lt = { "<" }
+op_ge = { ">=" }
+op_gt = { ">" }
+op_add = { "+" }
+op_sub = { "-" }
+op_mul = { "*" }
+op_div = { "/" }
+op_mod = { "%" }
+
+lparen = _{ "(" }
+rparen = _{ ")" }
+lbracket = _{ "[" }
+rbracket = _{ "]" }

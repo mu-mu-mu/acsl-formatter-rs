@@ -1,5 +1,5 @@
 use crate::format::format_expr;
-use crate::parser::Parser;
+use crate::parser;
 
 pub fn format_acsl_annotations(input: &str) -> String {
     let chars: Vec<char> = input.chars().collect();
@@ -57,7 +57,7 @@ pub fn format_annotation_content(content: &str) -> String {
     if trimmed.is_empty() {
         return String::new();
     }
-    match Parser::new(trimmed).and_then(|mut p| p.parse_annotation_list()) {
+    match parser::parse_annotation_list(trimmed) {
         Ok((exprs, trailing)) => {
             let mut joined = exprs
                 .iter()

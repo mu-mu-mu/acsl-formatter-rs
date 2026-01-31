@@ -2,7 +2,6 @@ mod annotate;
 mod ast;
 mod error;
 mod format;
-mod lexer;
 mod parser;
 
 pub use crate::error::Error;
@@ -16,6 +15,6 @@ pub fn format_acsl_annotation(content: &str) -> String {
 }
 
 pub fn format_expression(expr: &str) -> Result<String, Error> {
-    let parsed = parser::Parser::new(expr)?.parse_expression()?;
+    let parsed = parser::parse_expression(expr)?;
     Ok(format::format_expr(&parsed))
 }
