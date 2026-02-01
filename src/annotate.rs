@@ -77,18 +77,29 @@ pub fn format_annotation_content(content: &str, style: FormatStyle) -> String {
             let parts = clauses
                 .iter()
                 .map(|clause| match clause {
-                    ClauseKind::Expr(expr) => format_expr(expr),
-                    ClauseKind::Assert(expr) => format!("assert {}", format_expr(expr)),
-                    ClauseKind::LoopInvariant(expr) => {
-                        format!("loop invariant {}", format_expr(expr))
+                    ClauseKind::Expr(expr) => normalize_redundant_spaces(&format_expr(expr)),
+                    ClauseKind::Assert(expr) => {
+                        format!("assert {}", normalize_redundant_spaces(&format_expr(expr)))
                     }
-                    ClauseKind::Requires(expr) => format!("requires {}", format_expr(expr)),
-                    ClauseKind::Ensures(expr) => format!("ensures {}", format_expr(expr)),
-                    ClauseKind::Assumes(expr) => format!("assumes {}", format_expr(expr)),
+                    ClauseKind::LoopInvariant(expr) => {
+                        format!(
+                            "loop invariant {}",
+                            normalize_redundant_spaces(&format_expr(expr))
+                        )
+                    }
+                    ClauseKind::Requires(expr) => {
+                        format!("requires {}", normalize_redundant_spaces(&format_expr(expr)))
+                    }
+                    ClauseKind::Ensures(expr) => {
+                        format!("ensures {}", normalize_redundant_spaces(&format_expr(expr)))
+                    }
+                    ClauseKind::Assumes(expr) => {
+                        format!("assumes {}", normalize_redundant_spaces(&format_expr(expr)))
+                    }
                     ClauseKind::Assigns(items) => {
                         let list = items
                             .iter()
-                            .map(format_expr)
+                            .map(|expr| normalize_redundant_spaces(&format_expr(expr)))
                             .collect::<Vec<_>>()
                             .join(", ");
                         format!("assigns {}", list)
@@ -224,4 +235,25 @@ fn hanging_indent(line: &str) -> usize {
         }
     }
     0
+}
+
+fn normalize_redundant_spaces(input: &str) -> String {
+    let mut s = input.to_string();
+    let replacements = [
+        (" -> ", "->"),
+        ("-> ", "->"),
+        (" ->", "->"),
+        (" . ", "."),
+        (". ", "."),
+        (" .", "."),
+        (" [", "["),
+        ("[ ", "["),
+        (" ]", "]"),
+    ];
+    for (from, to) in replacements {
+        while s.contains(from) {
+            s = s.replace(from, to);
+        }
+    }
+    s
 }

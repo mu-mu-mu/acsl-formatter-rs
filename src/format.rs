@@ -1,4 +1,4 @@
-use crate::ast::{Assoc, Expr};
+use crate::ast::{Assoc, Expr, MemberOp};
 
 pub fn format_expr(expr: &Expr) -> String {
     format_expr_with_ctx(expr, 0, Assoc::Left, false)
@@ -81,6 +81,25 @@ fn format_expr_with_ctx(expr: &Expr, parent_prec: u8, parent_assoc: Assoc, is_ri
                 combined
             }
         }
+        Expr::Member { base, op, field } => {
+            let base_prec = prec_for_expr(base);
+            let base_str = format_expr_with_ctx(base, PREC_POSTFIX, Assoc::Left, false);
+            let base_str = if needs_parens(base_prec, PREC_POSTFIX, Assoc::Left, false) {
+                format!("({base_str})")
+            } else {
+                base_str
+            };
+            let op_str = match op {
+                MemberOp::Dot => ".",
+                MemberOp::Arrow => "->",
+            };
+            let combined = format!("{base_str}{op_str}{field}");
+            if needs_parens(PREC_POSTFIX, parent_prec, parent_assoc, is_right) {
+                format!("({combined})")
+            } else {
+                combined
+            }
+        }
         Expr::Quant { kind, vars, body } => {
             let prec = PREC_QUANT;
             let vars_str = vars.join(", ");
@@ -120,7 +139,7 @@ fn prec_for_expr(expr: &Expr) -> u8 {
         Expr::Ternary { .. } => PREC_TERNARY,
         Expr::Binary { op, .. } => op.precedence(),
         Expr::Unary { .. } => PREC_UNARY,
-        Expr::Call { .. } | Expr::Index { .. } => PREC_POSTFIX,
+        Expr::Call { .. } | Expr::Index { .. } | Expr::Member { .. } => PREC_POSTFIX,
         Expr::Ident(_) | Expr::Number(_) => PREC_PRIMARY,
     }
 }

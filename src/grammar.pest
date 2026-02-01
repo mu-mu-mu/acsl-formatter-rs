@@ -28,7 +28,7 @@ add_expr = { mul_expr ~ ((op_add | op_sub) ~ mul_expr)* }
 mul_expr = { unary_expr ~ ((op_mul | op_div | op_mod) ~ unary_expr)* }
 
 unary_expr = { op_unary* ~ postfix_expr }
-postfix_expr = { primary ~ (call | index)* }
+postfix_expr = { primary ~ (call | index | member)* }
 
 primary = { quant | number | ident | lparen ~ expr ~ rparen }
 
@@ -38,6 +38,7 @@ exists = { "\\exists" }
 
 call = { lparen ~ (expr ~ (comma ~ expr)*)? ~ rparen }
 index = { lbracket ~ expr ~ rbracket }
+member = { (op_arrow | op_dot) ~ ident }
 
 ident_list = { ident ~ (comma ~ ident)* }
 ident = @{ (ASCII_ALPHA | "_" | "\\") ~ (ASCII_ALPHANUMERIC | "_" | "\\")* }
@@ -73,6 +74,8 @@ op_sub = { "-" }
 op_mul = { "*" }
 op_div = { "/" }
 op_mod = { "%" }
+op_arrow = { "->" }
+op_dot = { "." }
 
 lparen = _{ "(" }
 rparen = _{ ")" }

@@ -24,6 +24,11 @@ pub enum Expr {
         base: Box<Expr>,
         index: Box<Expr>,
     },
+    Member {
+        base: Box<Expr>,
+        op: MemberOp,
+        field: String,
+    },
     Quant {
         kind: QuantKind,
         vars: Vec<String>,
@@ -61,6 +66,12 @@ pub enum BinaryOp {
 pub enum Assoc {
     Left,
     Right,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MemberOp {
+    Dot,
+    Arrow,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

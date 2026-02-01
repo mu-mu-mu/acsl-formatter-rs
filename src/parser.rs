@@ -1,4 +1,4 @@
-use crate::ast::{BinaryOp, Expr, QuantKind, UnaryOp};
+use crate::ast::{BinaryOp, Expr, MemberOp, QuantKind, UnaryOp};
 use crate::error::Error;
 use pest::iterators::Pair;
 use pest::Parser;
@@ -280,6 +280,26 @@ fn parse_postfix(pair: Pair<Rule>) -> Result<Expr, Error> {
                 expr = Expr::Index {
                     base: Box::new(expr),
                     index: Box::new(index),
+                };
+            }
+            Rule::member => {
+                let mut inner = postfix.into_inner();
+                let op_pair = inner
+                    .next()
+                    .ok_or_else(|| Error::Parse("missing member op".to_string()))?;
+                let field_pair = inner
+                    .next()
+                    .ok_or_else(|| Error::Parse("missing member field".to_string()))?;
+                let op = match op_pair.as_rule() {
+                    Rule::op_arrow => MemberOp::Arrow,
+                    Rule::op_dot => MemberOp::Dot,
+                    _ => return Err(Error::Parse("invalid member op".to_string())),
+                };
+                let field = field_pair.as_str().to_string();
+                expr = Expr::Member {
+                    base: Box::new(expr),
+                    op,
+                    field,
                 };
             }
             _ => {}
