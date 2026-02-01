@@ -37,8 +37,18 @@ pub fn format_acsl_annotations(input: &str) -> String {
             }
             let formatted = format_annotation_content(&content, FormatStyle::Line);
             if !formatted.is_empty() {
-                out.push(' ');
-                out.push_str(&formatted);
+                let mut first = true;
+                for line in formatted.split('\n') {
+                    if !first {
+                        out.push('\n');
+                        out.push_str("//@ ");
+                    }
+                    if first {
+                        out.push(' ');
+                        first = false;
+                    }
+                    out.push_str(line);
+                }
             }
             if i < chars.len() && chars[i] == '\n' {
                 out.push('\n');
@@ -90,21 +100,118 @@ pub fn format_annotation_content(content: &str, style: FormatStyle) -> String {
                 return String::new();
             }
             match style {
-                FormatStyle::Block => {
-                    let mut lines = Vec::new();
-                    for part in parts {
-                        let needs_semicolon = !part.starts_with("behavior ");
-                        if needs_semicolon {
-                            lines.push(format!("  {part};"));
-                        } else {
-                            lines.push(format!("  {part}"));
-                        }
-                    }
-                    lines.join("\n")
-                }
-                FormatStyle::Line => parts.join("; "),
+                FormatStyle::Block => format_block_lines(parts),
+                FormatStyle::Line => format_line_text(parts),
             }
         }
         Err(_) => trimmed.to_string(),
     }
+}
+
+fn format_block_lines(parts: Vec<String>) -> String {
+    let mut lines = Vec::new();
+    for part in parts {
+        let is_behavior = part.starts_with("behavior ");
+        if is_behavior {
+            lines.push(format!("  {part}"));
+            continue;
+        }
+        let hang = hanging_indent(&part);
+        let mut wrapped = wrap_with_hang(&part, 80 - 2, hang);
+        if let Some(last) = wrapped.last_mut() {
+            last.push(';');
+        }
+        for (idx, line) in wrapped.into_iter().enumerate() {
+            if idx == 0 {
+                lines.push(format!("  {line}"));
+            } else {
+                lines.push(format!("  {}{line}", " ".repeat(hang)));
+            }
+        }
+    }
+    lines.join("\n")
+}
+
+fn format_line_text(parts: Vec<String>) -> String {
+    let joined = parts.join("; ");
+    let wrapped = wrap_line(&joined, 80 - 4);
+    wrapped.join("\n")
+}
+
+fn wrap_line(line: &str, max_len: usize) -> Vec<String> {
+    let trimmed = line.trim();
+    if trimmed.len() <= max_len {
+        return vec![trimmed.to_string()];
+    }
+    let mut out = Vec::new();
+    let mut current = String::new();
+    for word in trimmed.split_whitespace() {
+        if current.is_empty() {
+            current.push_str(word);
+            continue;
+        }
+        let next_len = current.len() + 1 + word.len();
+        if next_len > max_len {
+            out.push(current);
+            current = word.to_string();
+        } else {
+            current.push(' ');
+            current.push_str(word);
+        }
+    }
+    if !current.is_empty() {
+        out.push(current);
+    }
+    out
+}
+
+fn wrap_with_hang(line: &str, max_len: usize, hang: usize) -> Vec<String> {
+    let trimmed = line.trim();
+    if trimmed.len() <= max_len {
+        return vec![trimmed.to_string()];
+    }
+    let mut out = Vec::new();
+    let mut current = String::new();
+    let mut limit = max_len;
+    for word in trimmed.split_whitespace() {
+        if current.is_empty() {
+            current.push_str(word);
+            continue;
+        }
+        let next_len = current.len() + 1 + word.len();
+        if next_len > limit {
+            out.push(current);
+            current = word.to_string();
+            limit = max_len.saturating_sub(hang);
+        } else {
+            current.push(' ');
+            current.push_str(word);
+        }
+    }
+    if !current.is_empty() {
+        out.push(current);
+    }
+    out
+}
+
+fn hanging_indent(line: &str) -> usize {
+    let keywords = [
+        "requires ",
+        "ensures ",
+        "assumes ",
+        "assigns ",
+        "assert ",
+        "loop invariant ",
+    ];
+    for kw in keywords {
+        if line.starts_with(kw) {
+            if kw == "ensures " {
+                if let Some(idx) = line.find("== ") {
+                    return idx + 3;
+                }
+            }
+            return kw.len();
+        }
+    }
+    0
 }
