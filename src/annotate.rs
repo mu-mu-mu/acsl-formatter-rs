@@ -110,10 +110,12 @@ pub fn format_annotation_content(content: &str, style: FormatStyle) -> String {
 
 fn format_block_lines(parts: Vec<String>) -> String {
     let mut lines = Vec::new();
+    let mut in_behavior = false;
     for part in parts {
         let is_behavior = part.starts_with("behavior ");
         if is_behavior {
             lines.push(format!("  {part}"));
+            in_behavior = true;
             continue;
         }
         let hang = hanging_indent(&part);
@@ -123,9 +125,17 @@ fn format_block_lines(parts: Vec<String>) -> String {
         }
         for (idx, line) in wrapped.into_iter().enumerate() {
             if idx == 0 {
-                lines.push(format!("  {line}"));
+                if in_behavior {
+                    lines.push(format!("    {line}"));
+                } else {
+                    lines.push(format!("  {line}"));
+                }
             } else {
-                lines.push(format!("  {}{line}", " ".repeat(hang)));
+                if in_behavior {
+                    lines.push(format!("    {}{line}", " ".repeat(hang)));
+                } else {
+                    lines.push(format!("  {}{line}", " ".repeat(hang)));
+                }
             }
         }
     }
