@@ -1,7 +1,99 @@
-use crate::ast::{Assoc, Expr, MemberOp};
+use crate::ast::{Assoc, BinaryOp, Expr, MemberOp, UnaryOp};
 
 pub fn format_expr(expr: &Expr) -> String {
-    format_expr_with_ctx(expr, 0, Assoc::Left, false)
+    let simplified = simplify_expr(expr);
+    format_expr_with_ctx(&simplified, 0, Assoc::Left, false)
+}
+
+fn simplify_expr(expr: &Expr) -> Expr {
+    match expr {
+        Expr::Ident(_) | Expr::Number(_) => expr.clone(),
+        Expr::Unary { op, expr } => {
+            let inner = simplify_expr(expr);
+            if *op != UnaryOp::Not {
+                return Expr::Unary {
+                    op: *op,
+                    expr: Box::new(inner),
+                };
+            }
+            match inner {
+                Expr::Unary {
+                    op: UnaryOp::Not,
+                    expr,
+                } => *expr,
+                Expr::Binary {
+                    op: bin_op,
+                    left,
+                    right,
+                } => {
+                    if let Some(inverted) = invert_comparison(bin_op) {
+                        Expr::Binary {
+                            op: inverted,
+                            left,
+                            right,
+                        }
+                    } else {
+                        Expr::Unary {
+                            op: *op,
+                            expr: Box::new(Expr::Binary {
+                                op: bin_op,
+                                left,
+                                right,
+                            }),
+                        }
+                    }
+                }
+                other => Expr::Unary {
+                    op: *op,
+                    expr: Box::new(other),
+                },
+            }
+        }
+        Expr::Binary { op, left, right } => Expr::Binary {
+            op: *op,
+            left: Box::new(simplify_expr(left)),
+            right: Box::new(simplify_expr(right)),
+        },
+        Expr::Ternary {
+            cond,
+            then_expr,
+            else_expr,
+        } => Expr::Ternary {
+            cond: Box::new(simplify_expr(cond)),
+            then_expr: Box::new(simplify_expr(then_expr)),
+            else_expr: Box::new(simplify_expr(else_expr)),
+        },
+        Expr::Call { callee, args } => Expr::Call {
+            callee: Box::new(simplify_expr(callee)),
+            args: args.iter().map(simplify_expr).collect(),
+        },
+        Expr::Index { base, index } => Expr::Index {
+            base: Box::new(simplify_expr(base)),
+            index: Box::new(simplify_expr(index)),
+        },
+        Expr::Member { base, op, field } => Expr::Member {
+            base: Box::new(simplify_expr(base)),
+            op: *op,
+            field: field.clone(),
+        },
+        Expr::Quant { kind, vars, body } => Expr::Quant {
+            kind: *kind,
+            vars: vars.clone(),
+            body: Box::new(simplify_expr(body)),
+        },
+    }
+}
+
+fn invert_comparison(op: BinaryOp) -> Option<BinaryOp> {
+    match op {
+        BinaryOp::Eq => Some(BinaryOp::Ne),
+        BinaryOp::Ne => Some(BinaryOp::Eq),
+        BinaryOp::Lt => Some(BinaryOp::Ge),
+        BinaryOp::Le => Some(BinaryOp::Gt),
+        BinaryOp::Gt => Some(BinaryOp::Le),
+        BinaryOp::Ge => Some(BinaryOp::Lt),
+        _ => None,
+    }
 }
 
 fn format_expr_with_ctx(expr: &Expr, parent_prec: u8, parent_assoc: Assoc, is_right: bool) -> String {

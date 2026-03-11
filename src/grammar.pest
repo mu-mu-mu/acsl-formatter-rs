@@ -32,7 +32,7 @@ postfix_expr = { primary ~ (call | index | member)* }
 
 primary = { quant | number | ident | lparen ~ expr ~ rparen }
 
-quant = { (forall | exists) ~ ident_list ~ semicolon ~ expr }
+quant = { (forall | exists) ~ quant_var_list ~ semicolon ~ expr }
 forall = { "\\forall" }
 exists = { "\\exists" }
 
@@ -40,7 +40,8 @@ call = { lparen ~ (expr ~ (comma ~ expr)*)? ~ rparen }
 index = { lbracket ~ expr ~ rbracket }
 member = { (op_arrow | op_dot) ~ ident }
 
-ident_list = { ident ~ (comma ~ ident)* }
+quant_var_list = { quant_var ~ (comma ~ quant_var)* }
+quant_var = { ident ~ ident? }
 ident = @{ (ASCII_ALPHA | "_" | "\\") ~ (ASCII_ALPHANUMERIC | "_" | "\\")* }
 number = @{ ASCII_DIGIT+ }
 

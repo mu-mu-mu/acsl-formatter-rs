@@ -335,11 +335,22 @@ fn parse_quant(pair: Pair<Rule>) -> Result<Expr, Error> {
     let vars_pair = inner
         .next()
         .ok_or_else(|| Error::Parse("missing quantifier vars".to_string()))?;
-    let vars = vars_pair
-        .into_inner()
-        .filter(|p| p.as_rule() == Rule::ident)
-        .map(|p| p.as_str().to_string())
-        .collect::<Vec<_>>();
+    let mut vars = Vec::new();
+    for var_pair in vars_pair.into_inner() {
+        if var_pair.as_rule() != Rule::quant_var {
+            continue;
+        }
+        let idents = var_pair
+            .into_inner()
+            .filter(|p| p.as_rule() == Rule::ident)
+            .map(|p| p.as_str().to_string())
+            .collect::<Vec<_>>();
+        match idents.as_slice() {
+            [name] => vars.push(name.clone()),
+            [ty, name] => vars.push(format!("{ty} {name}")),
+            _ => return Err(Error::Parse("invalid quantifier variable".to_string())),
+        }
+    }
     let body_pair = inner
         .next()
         .ok_or_else(|| Error::Parse("missing quantifier body".to_string()))?;
