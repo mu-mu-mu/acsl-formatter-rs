@@ -36,6 +36,58 @@ fn run_fixture(name: &str) {
     let _ = fs::remove_file(&tmp);
 }
 
+fn run_diff_fixture(name: &str) {
+    let base = Path::new("tests/fixtures");
+    let input_path = base.join(format!("{name}.c"));
+    let input = fs::read_to_string(&input_path).expect("read input fixture");
+
+    let tmp = temp_path(&format!("{name}_diff"));
+    fs::write(&tmp, &input).expect("write temp input");
+
+    let output = Command::new(env!("CARGO_BIN_EXE_acslfmt"))
+        .arg("--diff")
+        .arg(&tmp)
+        .output()
+        .expect("run acslfmt --diff");
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8(output.stdout).expect("diff utf8");
+    assert!(stdout.contains("--- "));
+    assert!(stdout.contains("+++ "));
+    assert!(stdout.contains("-  ensures (a) && (b || c);"));
+    assert!(stdout.contains("+  ensures a && (b || c);"));
+
+    let after = fs::read_to_string(&tmp).expect("read file after diff run");
+    assert_eq!(after, input, "--diff must not rewrite file");
+
+    let _ = fs::remove_file(&tmp);
+}
+
+fn run_diff_nochange_fixture(name: &str) {
+    let base = Path::new("tests/fixtures");
+    let expected_path = base.join(format!("{name}.expected.c"));
+    let expected = fs::read_to_string(&expected_path).expect("read expected fixture");
+
+    let tmp = temp_path(&format!("{name}_diff_nochange"));
+    fs::write(&tmp, &expected).expect("write temp input");
+
+    let output = Command::new(env!("CARGO_BIN_EXE_acslfmt"))
+        .arg("--diff")
+        .arg(&tmp)
+        .output()
+        .expect("run acslfmt --diff");
+    assert!(output.status.success());
+    assert!(
+        output.stdout.is_empty(),
+        "no diff expected for already formatted file"
+    );
+
+    let after = fs::read_to_string(&tmp).expect("read file after diff run");
+    assert_eq!(after, expected, "--diff must not rewrite file");
+
+    let _ = fs::remove_file(&tmp);
+}
+
 #[test]
 fn formats_all_fixtures() {
     let base = Path::new("tests/fixtures");
@@ -65,4 +117,14 @@ fn formats_all_fixtures() {
         run_fixture(&name);
         println!("fixture ok: {name}");
     }
+}
+
+#[test]
+fn diff_mode_prints_changes_without_rewrite() {
+    run_diff_fixture("basic");
+}
+
+#[test]
+fn diff_mode_prints_nothing_when_no_changes() {
+    run_diff_nochange_fixture("basic");
 }
