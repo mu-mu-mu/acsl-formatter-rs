@@ -112,8 +112,8 @@ fn format_expr_with_ctx(expr: &Expr, parent_prec: u8, parent_assoc: Assoc, is_ri
         Expr::Binary { op, left, right } => {
             let prec = op.precedence();
             let assoc = op.assoc();
-            let left_str = format_expr_with_ctx(left, prec, assoc, false);
-            let right_str = format_expr_with_ctx(right, prec, assoc, true);
+            let left_str = format_binary_child(left, *op, prec, assoc, false);
+            let right_str = format_binary_child(right, *op, prec, assoc, true);
             let combined = format!("{left_str} {} {right_str}", op.as_str());
             if needs_parens(prec, parent_prec, parent_assoc, is_right) {
                 format!("({combined})")
@@ -212,6 +212,21 @@ const PREC_UNARY: u8 = 10;
 const PREC_POSTFIX: u8 = 11;
 const PREC_PRIMARY: u8 = 12;
 
+fn format_binary_child(
+    expr: &Expr,
+    parent_op: BinaryOp,
+    parent_prec: u8,
+    parent_assoc: Assoc,
+    is_right: bool,
+) -> String {
+    let formatted = format_expr_with_ctx(expr, parent_prec, parent_assoc, is_right);
+    if needs_binary_child_parens(expr, parent_op) {
+        format!("({formatted})")
+    } else {
+        formatted
+    }
+}
+
 fn needs_parens(node_prec: u8, parent_prec: u8, parent_assoc: Assoc, is_right: bool) -> bool {
     if node_prec < parent_prec {
         return true;
@@ -223,6 +238,19 @@ fn needs_parens(node_prec: u8, parent_prec: u8, parent_assoc: Assoc, is_right: b
         Assoc::Left => is_right,
         Assoc::Right => !is_right,
     }
+}
+
+fn needs_binary_child_parens(expr: &Expr, parent_op: BinaryOp) -> bool {
+    matches!(
+        (parent_op, expr),
+        (
+            BinaryOp::Eq | BinaryOp::Ne,
+            Expr::Binary {
+                op: BinaryOp::Lt | BinaryOp::Le | BinaryOp::Gt | BinaryOp::Ge,
+                ..
+            }
+        )
+    )
 }
 
 fn prec_for_expr(expr: &Expr) -> u8 {

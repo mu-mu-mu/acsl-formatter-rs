@@ -25,6 +25,12 @@ fn keeps_required_parentheses_for_precedence() {
 }
 
 #[test]
+fn keeps_relational_operand_parenthesized_inside_equality() {
+    let out = format_expression("s == (10 > num)").expect("format");
+    assert_eq!(out, "s == (10 > num)");
+}
+
+#[test]
 fn formats_simple_quantifier() {
     let out = format_acsl_annotation(r"ensures \forall i; (0 <= i) && (i < n) ==> a[i] == b[i];");
     assert_eq!(out, r"ensures \forall i; 0 <= i && i < n ==> a[i] == b[i]");
