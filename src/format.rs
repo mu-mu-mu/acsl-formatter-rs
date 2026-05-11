@@ -249,6 +249,12 @@ fn needs_binary_child_parens(expr: &Expr, parent_op: BinaryOp) -> bool {
     matches!(
         (parent_op, expr),
         (
+            BinaryOp::Or,
+            Expr::Binary {
+                op: BinaryOp::And,
+                ..
+            }
+        ) | (
             BinaryOp::Eq | BinaryOp::Ne,
             Expr::Binary {
                 op: BinaryOp::Lt | BinaryOp::Le | BinaryOp::Gt | BinaryOp::Ge,

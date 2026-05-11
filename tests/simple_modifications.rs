@@ -79,6 +79,12 @@ fn keeps_bitor_operand_parenthesized_inside_bitand() {
 }
 
 #[test]
+fn keeps_and_operands_parenthesized_inside_or_for_readability() {
+    let out = format_expression("(a && b) || (a && c)").expect("format");
+    assert_eq!(out, "(a && b) || (a && c)");
+}
+
+#[test]
 fn formats_simple_quantifier() {
     let out = format_acsl_annotation(r"ensures \forall i; (0 <= i) && (i < n) ==> a[i] == b[i];");
     assert_eq!(out, r"ensures \forall i; 0 <= i && i < n ==> a[i] == b[i]");
