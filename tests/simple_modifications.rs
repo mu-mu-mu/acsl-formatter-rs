@@ -13,6 +13,24 @@ fn removes_redundant_parentheses_in_requires_clause() {
 }
 
 #[test]
+fn removes_redundant_parentheses_around_requires_condition() {
+    let out = format_acsl_annotation("requires (a && b);");
+    assert_eq!(out, "requires a && b");
+}
+
+#[test]
+fn removes_redundant_parentheses_around_bitand_requires_condition() {
+    let out = format_acsl_annotation("requires (a & b);");
+    assert_eq!(out, "requires a & b");
+}
+
+#[test]
+fn removes_redundant_parentheses_around_bitor_requires_condition() {
+    let out = format_acsl_annotation("requires (a | b);");
+    assert_eq!(out, "requires a | b");
+}
+
+#[test]
 fn formats_block_comment_annotation() {
     let out = format_acsl_comment("/*@ requires (a + b) * (c) > 0; */");
     assert_eq!(out, "/*@\n  requires (a + b) * c > 0;\n*/");
@@ -46,6 +64,18 @@ fn keeps_required_parentheses_for_precedence() {
 fn keeps_relational_operand_parenthesized_inside_equality() {
     let out = format_expression("s == (10 > num)").expect("format");
     assert_eq!(out, "s == (10 > num)");
+}
+
+#[test]
+fn keeps_bitand_operand_parenthesized_inside_equality() {
+    let out = format_expression("a == (b & c)").expect("format");
+    assert_eq!(out, "a == (b & c)");
+}
+
+#[test]
+fn keeps_bitor_operand_parenthesized_inside_bitand() {
+    let out = format_expression("a & (b | c)").expect("format");
+    assert_eq!(out, "a & (b | c)");
 }
 
 #[test]

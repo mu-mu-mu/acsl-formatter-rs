@@ -159,7 +159,9 @@ fn parse_expr(pair: Pair<Rule>) -> Result<Expr, Error> {
         Rule::iff_expr => parse_left_assoc(pair, parse_implies_expr),
         Rule::implies_expr => parse_right_assoc(pair, parse_or_expr),
         Rule::or_expr => parse_left_assoc(pair, parse_and_expr),
-        Rule::and_expr => parse_left_assoc(pair, parse_eq_expr),
+        Rule::and_expr => parse_left_assoc(pair, parse_bitor_expr),
+        Rule::bitor_expr => parse_left_assoc(pair, parse_bitand_expr),
+        Rule::bitand_expr => parse_left_assoc(pair, parse_eq_expr),
         Rule::eq_expr => parse_left_assoc(pair, parse_rel_expr),
         Rule::rel_expr => parse_left_assoc(pair, parse_add_expr),
         Rule::add_expr => parse_left_assoc(pair, parse_mul_expr),
@@ -208,6 +210,14 @@ fn parse_or_expr(pair: Pair<Rule>) -> Result<Expr, Error> {
 }
 
 fn parse_and_expr(pair: Pair<Rule>) -> Result<Expr, Error> {
+    parse_left_assoc(pair, parse_bitor_expr)
+}
+
+fn parse_bitor_expr(pair: Pair<Rule>) -> Result<Expr, Error> {
+    parse_left_assoc(pair, parse_bitand_expr)
+}
+
+fn parse_bitand_expr(pair: Pair<Rule>) -> Result<Expr, Error> {
     parse_left_assoc(pair, parse_eq_expr)
 }
 
@@ -447,6 +457,8 @@ fn map_bin_op_rule(rule: Rule) -> Option<BinaryOp> {
         Rule::op_ge => Some(BinaryOp::Ge),
         Rule::op_eq => Some(BinaryOp::Eq),
         Rule::op_ne => Some(BinaryOp::Ne),
+        Rule::op_bitor => Some(BinaryOp::BitOr),
+        Rule::op_bitand => Some(BinaryOp::BitAnd),
         Rule::op_and => Some(BinaryOp::And),
         Rule::op_or => Some(BinaryOp::Or),
         Rule::op_implies => Some(BinaryOp::Implies),

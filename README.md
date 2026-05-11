@@ -22,7 +22,7 @@ Supported modifications:
 
 Supported expression forms inside those clauses:
 
-- Unary/binary operators (`!`, `+`, `-`, `*`, `/`, `%`, comparisons, `&&`, `||`, `==>`, `<==>`)
+- Unary/binary operators (`!`, `+`, `-`, `*`, `/`, `%`, comparisons, `&`, `|`, `&&`, `||`, `==>`, `<==>`)
 - Ternary (`cond ? a : b`)
 - Calls, indexing, member access (`f(x)`, `a[i]`, `p->x`, `s.x`)
 - Quantifiers (`\forall`, `\exists`)

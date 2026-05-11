@@ -20,7 +20,9 @@ iff_expr = { implies_expr ~ (op_iff ~ implies_expr)* }
 implies_expr = { or_expr ~ (op_implies ~ or_expr)* }
 
 or_expr = { and_expr ~ (op_or ~ and_expr)* }
-and_expr = { eq_expr ~ (op_and ~ eq_expr)* }
+and_expr = { bitor_expr ~ (op_and ~ bitor_expr)* }
+bitor_expr = { bitand_expr ~ (op_bitor ~ bitand_expr)* }
+bitand_expr = { eq_expr ~ (op_bitand ~ eq_expr)* }
 
 eq_expr = { rel_expr ~ ((op_eq | op_ne) ~ rel_expr)* }
 rel_expr = { add_expr ~ ((op_le | op_lt | op_ge | op_gt) ~ add_expr)* }
@@ -64,6 +66,8 @@ op_iff = { "<==>" }
 op_implies = { "==>" }
 op_or = { "||" }
 op_and = { "&&" }
+op_bitor = { "|" }
+op_bitand = { "&" }
 op_eq = { "==" }
 op_ne = { "!=" }
 op_le = { "<=" }
