@@ -1,9 +1,27 @@
-use acsl_formatter::{format_acsl_annotation, format_expression};
+use acsl_formatter::{format_acsl_annotation, format_acsl_comment, format_expression};
 
 #[test]
 fn removes_redundant_parentheses() {
     let out = format_acsl_annotation("ensures (a) && (b || c);");
     assert_eq!(out, "ensures a && (b || c)");
+}
+
+#[test]
+fn removes_redundant_parentheses_in_requires_clause() {
+    let out = format_acsl_annotation("requires (a == 1);");
+    assert_eq!(out, "requires a == 1");
+}
+
+#[test]
+fn formats_block_comment_annotation() {
+    let out = format_acsl_comment("/*@ requires (a + b) * (c) > 0; */");
+    assert_eq!(out, "/*@\n  requires (a + b) * c > 0;\n*/");
+}
+
+#[test]
+fn removes_redundant_parentheses_in_block_comment_requires_clause() {
+    let out = format_acsl_comment("/*@ requires (a == 1); */");
+    assert_eq!(out, "/*@\n  requires a == 1;\n*/");
 }
 
 #[test]

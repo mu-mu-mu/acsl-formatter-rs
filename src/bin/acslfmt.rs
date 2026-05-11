@@ -45,7 +45,11 @@ fn unified_diff(path: &str, old: &str, new: &str) -> String {
     let mut out = String::new();
     out.push_str(&format!("--- {path}\n"));
     out.push_str(&format!("+++ {path}\n"));
-    out.push_str(&format!("@@ -1,{} +1,{} @@\n", old_lines.len(), new_lines.len()));
+    out.push_str(&format!(
+        "@@ -1,{} +1,{} @@\n",
+        old_lines.len(),
+        new_lines.len()
+    ));
 
     for i in 0..max {
         match (old_lines.get(i), new_lines.get(i)) {

@@ -10,7 +10,9 @@ acsl-formatter = { path = "../acsl-formatter-rs" }
 Use it from Rust:
 
 ```rust
-use acsl_formatter::{format_acsl_annotation, format_acsl_file, format_expression};
+use acsl_formatter::{
+    format_acsl_annotation, format_acsl_comment, format_acsl_file, format_expression,
+};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let c_file = r#"
@@ -24,6 +26,9 @@ int f(int a, int b, int c) { return a; }
 
     let ann = format_acsl_annotation("ensures (a) && (b || c);");
     println!("formatted annotation: {ann}");
+
+    let comment = format_acsl_comment("/*@ ensures (a) && (b || c); */");
+    println!("formatted comment:\n{comment}");
 
     let expr = format_expression("!(a == b)")?;
     println!("formatted expression: {expr}"); // a != b

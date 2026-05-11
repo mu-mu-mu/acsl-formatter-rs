@@ -27,7 +27,11 @@ pub fn format_acsl_annotations(input: &str) -> String {
                 out.push_str(&content);
                 break;
             }
-        } else if chars[i] == '/' && i + 2 < chars.len() && chars[i + 1] == '/' && chars[i + 2] == '@' {
+        } else if chars[i] == '/'
+            && i + 2 < chars.len()
+            && chars[i + 1] == '/'
+            && chars[i + 2] == '@'
+        {
             out.push_str("//@");
             i += 3;
             let mut content = String::new();
@@ -62,6 +66,17 @@ pub fn format_acsl_annotations(input: &str) -> String {
     out
 }
 
+pub fn format_single_annotation(input: &str) -> String {
+    let trimmed = input.trim();
+    if trimmed.starts_with("/*@") && trimmed.ends_with("*/") {
+        return format_acsl_annotations(trimmed);
+    }
+    if trimmed.starts_with("//@") && !trimmed.contains('\n') {
+        return format_acsl_annotations(trimmed);
+    }
+    input.to_string()
+}
+
 pub enum FormatStyle {
     Block,
     Line,
@@ -88,7 +103,10 @@ pub fn format_annotation_content(content: &str, style: FormatStyle) -> String {
                         )
                     }
                     ClauseKind::Requires(expr) => {
-                        format!("requires {}", normalize_redundant_spaces(&format_expr(expr)))
+                        format!(
+                            "requires {}",
+                            normalize_redundant_spaces(&format_expr(expr))
+                        )
                     }
                     ClauseKind::Ensures(expr) => {
                         format!("ensures {}", normalize_redundant_spaces(&format_expr(expr)))

@@ -34,3 +34,10 @@ cargo run --bin acslfmt -- path/to/file.c
 ```
 
 The file is updated in place.
+
+## Library API
+
+- `format_expression("a+b") -> Result<String, Error>` formats a standalone ACSL expression.
+- `format_acsl_annotation("requires a+b > 0;") -> String` formats annotation content without `/*@ ... */`.
+- `format_acsl_comment("/*@ requires a+b > 0; */") -> String` formats a single ACSL comment including delimiters.
+- `format_acsl_file(input) -> String` formats every ACSL comment found in a C source string.

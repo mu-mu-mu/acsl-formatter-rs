@@ -10,6 +10,10 @@ pub fn format_acsl_file(input: &str) -> String {
     annotate::format_acsl_annotations(input)
 }
 
+pub fn format_acsl_comment(input: &str) -> String {
+    annotate::format_single_annotation(input)
+}
+
 pub fn format_acsl_annotation(content: &str) -> String {
     annotate::format_annotation_content(content, annotate::FormatStyle::Line)
 }

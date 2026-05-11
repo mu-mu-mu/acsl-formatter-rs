@@ -96,7 +96,12 @@ fn invert_comparison(op: BinaryOp) -> Option<BinaryOp> {
     }
 }
 
-fn format_expr_with_ctx(expr: &Expr, parent_prec: u8, parent_assoc: Assoc, is_right: bool) -> String {
+fn format_expr_with_ctx(
+    expr: &Expr,
+    parent_prec: u8,
+    parent_assoc: Assoc,
+    is_right: bool,
+) -> String {
     match expr {
         Expr::Ident(name) => name.clone(),
         Expr::Number(value) => value.clone(),

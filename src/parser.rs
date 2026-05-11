@@ -1,7 +1,7 @@
 use crate::ast::{BinaryOp, Expr, MemberOp, QuantKind, UnaryOp};
 use crate::error::Error;
-use pest::iterators::Pair;
 use pest::Parser;
+use pest::iterators::Pair;
 use pest_derive::Parser;
 
 #[derive(Parser)]
@@ -21,8 +21,8 @@ pub enum ClauseKind {
 }
 
 pub fn parse_expression(input: &str) -> Result<Expr, Error> {
-    let mut pairs = AcslParser::parse(Rule::expr_input, input)
-        .map_err(|e| Error::Parse(e.to_string()))?;
+    let mut pairs =
+        AcslParser::parse(Rule::expr_input, input).map_err(|e| Error::Parse(e.to_string()))?;
     let pair = pairs
         .next()
         .ok_or_else(|| Error::Parse("missing expression".to_string()))?;
@@ -35,8 +35,8 @@ pub fn parse_expression(input: &str) -> Result<Expr, Error> {
 
 pub fn parse_annotation_list(input: &str) -> Result<(Vec<ClauseKind>, bool), Error> {
     let normalized = normalize_behavior_headers(input);
-    let mut pairs = AcslParser::parse(Rule::expr_list, &normalized)
-        .map_err(|e| Error::Parse(e.to_string()))?;
+    let mut pairs =
+        AcslParser::parse(Rule::expr_list, &normalized).map_err(|e| Error::Parse(e.to_string()))?;
     let pair = pairs
         .next()
         .ok_or_else(|| Error::Parse("missing expr_list".to_string()))?;
@@ -170,7 +170,10 @@ fn parse_expr(pair: Pair<Rule>) -> Result<Expr, Error> {
         Rule::quant => parse_quant(pair),
         Rule::number => Ok(Expr::Number(pair.as_str().to_string())),
         Rule::ident => Ok(Expr::Ident(pair.as_str().to_string())),
-        _ => Err(Error::Parse(format!("unexpected rule {:?}", pair.as_rule()))),
+        _ => Err(Error::Parse(format!(
+            "unexpected rule {:?}",
+            pair.as_rule()
+        ))),
     }
 }
 
@@ -256,7 +259,11 @@ fn parse_unary_expr(pair: Pair<Rule>) -> Result<Expr, Error> {
 
 fn parse_postfix(pair: Pair<Rule>) -> Result<Expr, Error> {
     let mut inner = pair.into_inner();
-    let mut expr = parse_primary(inner.next().ok_or_else(|| Error::Parse("missing primary".to_string()))?)?;
+    let mut expr = parse_primary(
+        inner
+            .next()
+            .ok_or_else(|| Error::Parse("missing primary".to_string()))?,
+    )?;
     for postfix in inner {
         match postfix.as_rule() {
             Rule::call => {
@@ -318,7 +325,10 @@ fn parse_primary(pair: Pair<Rule>) -> Result<Expr, Error> {
         Rule::number => Ok(Expr::Number(node.as_str().to_string())),
         Rule::ident => Ok(Expr::Ident(node.as_str().to_string())),
         Rule::expr => parse_expr(node),
-        _ => Err(Error::Parse(format!("unexpected primary {:?}", node.as_rule()))),
+        _ => Err(Error::Parse(format!(
+            "unexpected primary {:?}",
+            node.as_rule()
+        ))),
     }
 }
 
@@ -367,7 +377,11 @@ where
     F: Fn(Pair<Rule>) -> Result<Expr, Error>,
 {
     let mut inner = pair.into_inner();
-    let mut expr = parse_next(inner.next().ok_or_else(|| Error::Parse("missing lhs".to_string()))?)?;
+    let mut expr = parse_next(
+        inner
+            .next()
+            .ok_or_else(|| Error::Parse("missing lhs".to_string()))?,
+    )?;
     while let Some(op_pair) = inner.next() {
         let rhs_pair = inner
             .next()
