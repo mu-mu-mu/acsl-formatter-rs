@@ -107,6 +107,11 @@ fn format_expr_with_ctx(
         Expr::Number(value) => value.clone(),
         Expr::Unary { op, expr } => {
             let inner = format_expr_with_ctx(expr, PREC_UNARY, Assoc::Right, false);
+            let inner = if needs_unary_operand_parens(expr) {
+                format!("({inner})")
+            } else {
+                inner
+            };
             let combined = format!("{}{}", op.as_str(), inner);
             if needs_parens(PREC_UNARY, parent_prec, parent_assoc, is_right) {
                 format!("({combined})")
@@ -242,6 +247,13 @@ fn needs_parens(node_prec: u8, parent_prec: u8, parent_assoc: Assoc, is_right: b
     match parent_assoc {
         Assoc::Left => is_right,
         Assoc::Right => !is_right,
+    }
+}
+
+fn needs_unary_operand_parens(expr: &Expr) -> bool {
+    match expr {
+        Expr::Binary { .. } => prec_for_expr(expr) > PREC_UNARY,
+        _ => false,
     }
 }
 

@@ -61,7 +61,7 @@ comma = _{ "," }
 qmark = _{ "?" }
 colon = _{ ":" }
 
-op_unary = { "!" | "+" | "-" }
+op_unary = { "!" | "~" | "+" | "-" }
 op_iff = { "<==>" }
 op_implies = { "==>" }
 op_or = { "||" }

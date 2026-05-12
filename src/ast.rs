@@ -39,6 +39,7 @@ pub enum Expr {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UnaryOp {
     Not,
+    BitNot,
     Neg,
     Pos,
 }
@@ -86,6 +87,7 @@ impl UnaryOp {
     pub fn as_str(self) -> &'static str {
         match self {
             UnaryOp::Not => "!",
+            UnaryOp::BitNot => "~",
             UnaryOp::Neg => "-",
             UnaryOp::Pos => "+",
         }

@@ -255,6 +255,7 @@ fn parse_unary_expr(pair: Pair<Rule>) -> Result<Expr, Error> {
     for op in ops.into_iter().rev() {
         let uop = match op.as_str() {
             "!" => UnaryOp::Not,
+            "~" => UnaryOp::BitNot,
             "+" => UnaryOp::Pos,
             "-" => UnaryOp::Neg,
             _ => return Err(Error::Parse(format!("unknown unary op {op}"))),

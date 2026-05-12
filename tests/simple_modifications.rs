@@ -79,9 +79,27 @@ fn keeps_bitor_operand_parenthesized_inside_bitand() {
 }
 
 #[test]
+fn keeps_mod_operand_parenthesized_inside_not() {
+    let out = format_expression("!(qi % 10)").expect("format");
+    assert_eq!(out, "!(qi % 10)");
+}
+
+#[test]
+fn keeps_binary_operand_parenthesized_inside_bitnot() {
+    let out = format_expression("~(a & b)").expect("format");
+    assert_eq!(out, "~(a & b)");
+}
+
+#[test]
 fn keeps_and_operands_parenthesized_inside_or_for_readability() {
     let out = format_expression("(a && b) || (a && c)").expect("format");
     assert_eq!(out, "(a && b) || (a && c)");
+}
+
+#[test]
+fn keeps_and_operands_parenthesized_inside_or_in_annotation() {
+    let out = format_acsl_annotation("ensures (a && b) || (a && c);");
+    assert_eq!(out, "ensures (a && b) || (a && c)");
 }
 
 #[test]
